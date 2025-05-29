@@ -7,18 +7,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsBtn = document.getElementById('settings-btn');
     const settingsPanel = document.getElementById('settings-panel');
     const saveSettingsBtn = document.getElementById('save-settings');
-
+    
     // ============== Аудио Система ==============
     let audioContext;
     let soundsInitialized = false;
-
+    
     function initAudio() {
         if (soundsInitialized) return;
-
+        
         try {
-            audioContext = new(window.AudioContext || window.webkitAudioContext)();
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
             console.log("AudioContext инициализирован");
-
+            
             // Для Chrome и других браузеров с autoplay policy
             document.body.addEventListener('click', () => {
                 if (audioContext.state === 'suspended') {
@@ -27,10 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         soundsInitialized = true;
                     });
                 }
-            }, {
-                once: true
-            });
-
+            }, { once: true });
+            
         } catch (e) {
             console.error("Ошибка инициализации аудио:", e);
         }
@@ -38,22 +36,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function playSound(type) {
         if (!audioContext || audioContext.state !== 'running') return;
-
+        
         const freq = type === 'start' ? 800 : 400;
         const duration = type === 'start' ? 0.3 : 0.7;
-
+        
         const osc = audioContext.createOscillator();
         const gain = audioContext.createGain();
-
+        
         osc.type = 'sine';
         osc.frequency.value = freq;
         osc.connect(gain);
         gain.connect(audioContext.destination);
-
+        
         gain.gain.setValueAtTime(0, audioContext.currentTime);
         gain.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.01);
         gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
-
+        
         osc.start();
         osc.stop(audioContext.currentTime + duration);
     }
@@ -63,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentRound = 0;
     let isRunning = false;
     let isResting = false;
-
+    
     // Настройки по умолчанию
     let settings = {
         rounds: 3,
@@ -100,11 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function startTimer() {
         if (isRunning) return;
         initAudio(); // Пытаемся инициализировать аудио
-
+        
         isRunning = true;
         currentRound = 0;
         roundInfo.textContent = "Приготовьтесь...";
-
+        
         let delay = settings.delayTime;
         timerDisplay.textContent = formatTime(delay);
         animateTimer();
@@ -186,17 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ============== Управление Настройками ==============
     settingsBtn.addEventListener('click', () => {
-        // Добавьте console.log для отладки
-        console.log('Кнопка настроек нажата');
-
-        // Проверка существования settingsPanel
-        if (!settingsPanel) {
-            console.error('Панель настроек не найдена');
-            return;
-        }
-
         settingsPanel.classList.toggle('active');
-        initAudio();
+        initAudio(); // Активируем аудио при клике на настройки
     });
 
     saveSettingsBtn.addEventListener('click', () => {
@@ -206,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             restTime: parseInt(document.getElementById('rest-time').value) || 60,
             delayTime: parseInt(document.getElementById('delay-time').value) || 5
         };
-
+        
         localStorage.setItem('timerSettings', JSON.stringify(settings));
         settingsPanel.classList.remove('active');
     });
@@ -214,11 +203,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============== Инициализация ==============
     startBtn.addEventListener('click', startTimer);
     stopBtn.addEventListener('click', stopTimer);
-
-    // Для Telegram Mini App
-    if (window.Telegram?.WebApp) {
-        Telegram.WebApp.expand();
-        Telegram.WebApp.enableClosingConfirmation();
-        initAudio(); // В Telegram жесты уже были
-    }
 });
