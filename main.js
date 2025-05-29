@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Элементы интерфейса
     const timerDisplay = document.getElementById('timer');
     const roundInfo = document.getElementById('round-info');
     const startBtn = document.getElementById('start-btn');
@@ -8,11 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsPanel = document.getElementById('settings-panel');
     const saveSettingsBtn = document.getElementById('save-settings');
 
-    // Base64-звуки (встроены в код)
-    const startSound = new Audio('data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
-    const endSound = new Audio('data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
-
-    // Переменные таймера
     let timer;
     let currentRound = 0;
     let isRunning = false;
@@ -26,13 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
         delayTime: 5
     };
 
-    // Загрузка настроек из localStorage
+    // Загрузка настроек из localStorage (если есть)
     if (localStorage.getItem('timerSettings')) {
         settings = JSON.parse(localStorage.getItem('timerSettings'));
         updateInputs();
     }
 
-    // Форматирование времени (MM:SS)
+    // Отображение времени в формате MM:SS
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
         const secs = (seconds % 60).toString().padStart(2, '0');
@@ -47,30 +41,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('delay-time').value = settings.delayTime;
     }
 
-    // Воспроизведение звука
-    function playSound(sound) {
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Ошибка звука:", e));
-    }
-
-    // Анимация таймера
-    function animateTimer() {
-        timerDisplay.classList.add('timer-pulse');
-        setTimeout(() => {
-            timerDisplay.classList.remove('timer-pulse');
-        }, 500);
-    }
-
     // Старт таймера
     function startTimer() {
         if (isRunning) return;
         isRunning = true;
         currentRound = 0;
 
+        // Задержка перед стартом
         roundInfo.textContent = "Приготовьтесь...";
         let delay = settings.delayTime;
         timerDisplay.textContent = formatTime(delay);
-        animateTimer();
 
         const countdown = setInterval(() => {
             delay--;
@@ -78,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (delay <= 0) {
                 clearInterval(countdown);
-                playSound(startSound);
                 startRound();
             }
         }, 1000);
@@ -94,9 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isResting = false;
         roundInfo.textContent = `Раунд ${currentRound} из ${settings.rounds}`;
-        animateTimer();
-        playSound(startSound);
-
         let timeLeft = settings.roundTime;
         timerDisplay.textContent = formatTime(timeLeft);
 
@@ -106,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (timeLeft <= 0) {
                 clearInterval(timer);
-                playSound(endSound);
                 if (currentRound < settings.rounds) {
                     startRest();
                 } else {
@@ -120,9 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function startRest() {
         isResting = true;
         roundInfo.textContent = `Отдых (Раунд ${currentRound})`;
-        animateTimer();
-        playSound(startSound);
-
         let restLeft = settings.restTime;
         timerDisplay.textContent = formatTime(restLeft);
 
@@ -132,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (restLeft <= 0) {
                 clearInterval(timer);
-                playSound(endSound);
                 startRound();
             }
         }, 1000);
@@ -144,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         isRunning = false;
         roundInfo.textContent = "Тренировка завершена!";
         timerDisplay.textContent = "00:00";
-        animateTimer();
     }
 
     // Остановка таймера
@@ -152,14 +122,14 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(timer);
         isRunning = false;
         roundInfo.textContent = "Таймер остановлен";
-        timerDisplay.textContent = "00:00";
     }
 
-    // Управление настройками
+    // Открыть/закрыть настройки
     settingsBtn.addEventListener('click', () => {
-        settingsPanel.classList.toggle('active');
+        settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
     });
 
+    // Сохранить настройки
     saveSettingsBtn.addEventListener('click', () => {
         settings.rounds = parseInt(document.getElementById('rounds').value);
         settings.roundTime = parseInt(document.getElementById('round-time').value);
@@ -167,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         settings.delayTime = parseInt(document.getElementById('delay-time').value);
 
         localStorage.setItem('timerSettings', JSON.stringify(settings));
-        settingsPanel.classList.remove('active');
+        settingsPanel.style.display = 'none';
     });
 
     // Кнопки управления

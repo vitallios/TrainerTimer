@@ -59,9 +59,13 @@ body {
 }
 
 .settings-panel label {
-    display: block;
-    margin: 10px 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
+
+.settings-panel label span {}
 
 .settings-panel input {
     width: 60px;
@@ -77,6 +81,14 @@ body {
     background: #4a8a4a;
     width: 100%;
     margin-top: 10px;
+    color: #e6e6e6;
+    padding: 1em;
+    border: none;
+    border-radius: 1em;
+    -webkit-border-radius: 1em;
+    -moz-border-radius: 1em;
+    -ms-border-radius: 1em;
+    -o-border-radius: 1em;
 }
 
 #save-settings:hover {
