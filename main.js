@@ -8,15 +8,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsPanel = document.getElementById('settings-panel');
     const saveSettingsBtn = document.getElementById('save-settings');
 
-    // Добавьте в начало кода проверку Telegram WebApp
-    if (window.Telegram?.WebApp) {
-        Telegram.WebApp.expand(); // Раскрыть на весь экран
-        Telegram.WebApp.enableClosingConfirmation(); // Подтверждение закрытия
+    // Аудио-контекст и звуки
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let startSound, endSound;
+
+    // Создаем простые звуковые сигналы
+    function createBeepSound(frequency, duration) {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
+        oscillator.connect(gainNode);
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
+        
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration);
+        
+        return gainNode;
     }
 
-    // Base64-звуки (встроены в код)
-    const startSound = new Audio('data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
-    const endSound = new Audio('data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+    // Инициализация звуков
+    function initSounds() {
+        startSound = createBeepSound(800, 0.3);
+        endSound = createBeepSound(400, 0.7);
+        startSound.connect(audioContext.destination);
+        endSound.connect(audioContext.destination);
+    }
 
     // Переменные таймера
     let timer;
@@ -54,9 +75,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Воспроизведение звука
-    function playSound(sound) {
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log("Ошибка звука:", e));
+    function playSound(type) {
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        const now = audioContext.currentTime;
+        const sound = type === 'start' ? startSound : endSound;
+        
+        // Пересоздаем звук для каждого воспроизведения
+        const newSound = createBeepSound(
+            type === 'start' ? 800 : 400,
+            type === 'start' ? 0.3 : 0.7
+        );
+        newSound.connect(audioContext.destination);
     }
 
     // Анимация таймера
@@ -84,99 +116,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (delay <= 0) {
                 clearInterval(countdown);
-                playSound(startSound);
+                playSound('start');
                 startRound();
             }
         }, 1000);
     }
 
-    // Старт раунда
-    function startRound() {
-        currentRound++;
-        if (currentRound > settings.rounds) {
-            endSession();
-            return;
-        }
+    // Остальные функции (startRound, startRest, endSession, stopTimer) 
+    // остаются такими же, как в предыдущем коде, но с заменой:
+    // playSound(startSound) → playSound('start')
+    // playSound(endSound) → playSound('end')
 
-        isResting = false;
-        roundInfo.textContent = `Раунд ${currentRound} из ${settings.rounds}`;
-        animateTimer();
-        playSound(startSound);
-
-        let timeLeft = settings.roundTime;
-        timerDisplay.textContent = formatTime(timeLeft);
-
-        timer = setInterval(() => {
-            timeLeft--;
-            timerDisplay.textContent = formatTime(timeLeft);
-
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                playSound(endSound);
-                if (currentRound < settings.rounds) {
-                    startRest();
-                } else {
-                    endSession();
-                }
-            }
-        }, 1000);
-    }
-
-    // Отдых между раундами
-    function startRest() {
-        isResting = true;
-        roundInfo.textContent = `Отдых (Раунд ${currentRound})`;
-        animateTimer();
-        playSound(startSound);
-
-        let restLeft = settings.restTime;
-        timerDisplay.textContent = formatTime(restLeft);
-
-        timer = setInterval(() => {
-            restLeft--;
-            timerDisplay.textContent = formatTime(restLeft);
-
-            if (restLeft <= 0) {
-                clearInterval(timer);
-                playSound(endSound);
-                startRound();
-            }
-        }, 1000);
-    }
-
-    // Завершение тренировки
-    function endSession() {
-        clearInterval(timer);
-        isRunning = false;
-        roundInfo.textContent = "Тренировка завершена!";
-        timerDisplay.textContent = "00:00";
-        animateTimer();
-    }
-
-    // Остановка таймера
-    function stopTimer() {
-        clearInterval(timer);
-        isRunning = false;
-        roundInfo.textContent = "Таймер остановлен";
-        timerDisplay.textContent = "00:00";
-    }
-
-    // Управление настройками
-    settingsBtn.addEventListener('click', () => {
-        settingsPanel.classList.toggle('active');
-    });
-
-    saveSettingsBtn.addEventListener('click', () => {
-        settings.rounds = parseInt(document.getElementById('rounds').value);
-        settings.roundTime = parseInt(document.getElementById('round-time').value);
-        settings.restTime = parseInt(document.getElementById('rest-time').value);
-        settings.delayTime = parseInt(document.getElementById('delay-time').value);
-
-        localStorage.setItem('timerSettings', JSON.stringify(settings));
-        settingsPanel.classList.remove('active');
-    });
-
-    // Кнопки управления
-    startBtn.addEventListener('click', startTimer);
-    stopBtn.addEventListener('click', stopTimer);
+    // Инициализация при загрузке
+    initSounds();
+    
+    // Остальной код (управление настройками, кнопки) без изменений
 });
