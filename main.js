@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // ============== DOM Элементы ==============
+    // Элементы интерфейса
     const timerDisplay = document.getElementById('timer');
     const roundInfo = document.getElementById('round-info');
     const startBtn = document.getElementById('start-btn');
@@ -7,61 +7,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsBtn = document.getElementById('settings-btn');
     const settingsPanel = document.getElementById('settings-panel');
     const saveSettingsBtn = document.getElementById('save-settings');
-    
-    // ============== Аудио Система ==============
-    let audioContext;
-    let soundsInitialized = false;
-    
-    function initAudio() {
-        if (soundsInitialized) return;
-        
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            console.log("AudioContext инициализирован");
-            
-            // Для Chrome и других браузеров с autoplay policy
-            document.body.addEventListener('click', () => {
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume().then(() => {
-                        console.log("AudioContext активирован");
-                        soundsInitialized = true;
-                    });
-                }
-            }, { once: true });
-            
-        } catch (e) {
-            console.error("Ошибка инициализации аудио:", e);
-        }
-    }
 
-    function playSound(type) {
-        if (!audioContext || audioContext.state !== 'running') return;
-        
-        const freq = type === 'start' ? 800 : 400;
-        const duration = type === 'start' ? 0.3 : 0.7;
-        
-        const osc = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        osc.connect(gain);
-        gain.connect(audioContext.destination);
-        
-        gain.gain.setValueAtTime(0, audioContext.currentTime);
-        gain.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.01);
-        gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
-        
-        osc.start();
-        osc.stop(audioContext.currentTime + duration);
-    }
+    // Base64-звуки (встроены в код)
+    const startSound = new Audio('data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+    const endSound = new Audio('data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
 
-    // ============== Логика Таймера ==============
+    // Переменные таймера
     let timer;
     let currentRound = 0;
     let isRunning = false;
     let isResting = false;
-    
+
     // Настройки по умолчанию
     let settings = {
         rounds: 3,
@@ -70,18 +26,20 @@ document.addEventListener('DOMContentLoaded', () => {
         delayTime: 5
     };
 
-    // Загрузка настроек
+    // Загрузка настроек из localStorage
     if (localStorage.getItem('timerSettings')) {
         settings = JSON.parse(localStorage.getItem('timerSettings'));
         updateInputs();
     }
 
+    // Форматирование времени (MM:SS)
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
         const secs = (seconds % 60).toString().padStart(2, '0');
         return `${mins}:${secs}`;
     }
 
+    // Обновление полей ввода
     function updateInputs() {
         document.getElementById('rounds').value = settings.rounds;
         document.getElementById('round-time').value = settings.roundTime;
@@ -89,20 +47,27 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('delay-time').value = settings.delayTime;
     }
 
-    function animateTimer() {
-        timerDisplay.classList.add('timer-pulse');
-        setTimeout(() => timerDisplay.classList.remove('timer-pulse'), 500);
+    // Воспроизведение звука
+    function playSound(sound) {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log("Ошибка звука:", e));
     }
 
-    // ============== Основные Функции ==============
+    // Анимация таймера
+    function animateTimer() {
+        timerDisplay.classList.add('timer-pulse');
+        setTimeout(() => {
+            timerDisplay.classList.remove('timer-pulse');
+        }, 500);
+    }
+
+    // Старт таймера
     function startTimer() {
         if (isRunning) return;
-        initAudio(); // Пытаемся инициализировать аудио
-        
         isRunning = true;
         currentRound = 0;
+
         roundInfo.textContent = "Приготовьтесь...";
-        
         let delay = settings.delayTime;
         timerDisplay.textContent = formatTime(delay);
         animateTimer();
@@ -113,12 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (delay <= 0) {
                 clearInterval(countdown);
-                playSound('start');
+                playSound(startSound);
                 startRound();
             }
         }, 1000);
     }
 
+    // Старт раунда
     function startRound() {
         currentRound++;
         if (currentRound > settings.rounds) {
@@ -129,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isResting = false;
         roundInfo.textContent = `Раунд ${currentRound} из ${settings.rounds}`;
         animateTimer();
-        playSound('start');
+        playSound(startSound);
 
         let timeLeft = settings.roundTime;
         timerDisplay.textContent = formatTime(timeLeft);
@@ -140,17 +106,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (timeLeft <= 0) {
                 clearInterval(timer);
-                playSound('end');
-                currentRound < settings.rounds ? startRest() : endSession();
+                playSound(endSound);
+                if (currentRound < settings.rounds) {
+                    startRest();
+                } else {
+                    endSession();
+                }
             }
         }, 1000);
     }
 
+    // Отдых между раундами
     function startRest() {
         isResting = true;
         roundInfo.textContent = `Отдых (Раунд ${currentRound})`;
         animateTimer();
-        playSound('start');
+        playSound(startSound);
 
         let restLeft = settings.restTime;
         timerDisplay.textContent = formatTime(restLeft);
@@ -161,12 +132,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (restLeft <= 0) {
                 clearInterval(timer);
-                playSound('end');
+                playSound(endSound);
                 startRound();
             }
         }, 1000);
     }
 
+    // Завершение тренировки
     function endSession() {
         clearInterval(timer);
         isRunning = false;
@@ -175,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         animateTimer();
     }
 
+    // Остановка таймера
     function stopTimer() {
         clearInterval(timer);
         isRunning = false;
@@ -182,25 +155,22 @@ document.addEventListener('DOMContentLoaded', () => {
         timerDisplay.textContent = "00:00";
     }
 
-    // ============== Управление Настройками ==============
+    // Управление настройками
     settingsBtn.addEventListener('click', () => {
         settingsPanel.classList.toggle('active');
-        initAudio(); // Активируем аудио при клике на настройки
     });
 
     saveSettingsBtn.addEventListener('click', () => {
-        settings = {
-            rounds: parseInt(document.getElementById('rounds').value) || 3,
-            roundTime: parseInt(document.getElementById('round-time').value) || 180,
-            restTime: parseInt(document.getElementById('rest-time').value) || 60,
-            delayTime: parseInt(document.getElementById('delay-time').value) || 5
-        };
-        
+        settings.rounds = parseInt(document.getElementById('rounds').value);
+        settings.roundTime = parseInt(document.getElementById('round-time').value);
+        settings.restTime = parseInt(document.getElementById('rest-time').value);
+        settings.delayTime = parseInt(document.getElementById('delay-time').value);
+
         localStorage.setItem('timerSettings', JSON.stringify(settings));
         settingsPanel.classList.remove('active');
     });
 
-    // ============== Инициализация ==============
+    // Кнопки управления
     startBtn.addEventListener('click', startTimer);
     stopBtn.addEventListener('click', stopTimer);
 });
