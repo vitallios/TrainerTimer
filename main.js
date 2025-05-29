@@ -20,6 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
         delayTime: 5
     };
 
+    // Создаем аудио элементы для сигналов
+    const startSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+    const endSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-sports-whistle-1170.mp3');
+
     // Загрузка настроек из localStorage (если есть)
     if (localStorage.getItem('timerSettings')) {
         settings = JSON.parse(localStorage.getItem('timerSettings'));
@@ -41,6 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('delay-time').value = settings.delayTime;
     }
 
+    // Воспроизведение звука
+    function playSound(sound) {
+        sound.currentTime = 0; // Перемотать на начало, если уже играет
+        sound.play().catch(e => console.log("Автовоспроизведение заблокировано:", e));
+    }
+
     // Старт таймера
     function startTimer() {
         if (isRunning) return;
@@ -58,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (delay <= 0) {
                 clearInterval(countdown);
+                playSound(startSound); // Сигнал начала тренировки
                 startRound();
             }
         }, 1000);
@@ -76,12 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let timeLeft = settings.roundTime;
         timerDisplay.textContent = formatTime(timeLeft);
 
+        playSound(startSound); // Сигнал начала раунда
+
         timer = setInterval(() => {
             timeLeft--;
             timerDisplay.textContent = formatTime(timeLeft);
 
             if (timeLeft <= 0) {
                 clearInterval(timer);
+                playSound(endSound); // Сигнал конца раунда
                 if (currentRound < settings.rounds) {
                     startRest();
                 } else {
@@ -98,12 +112,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let restLeft = settings.restTime;
         timerDisplay.textContent = formatTime(restLeft);
 
+        playSound(endSound); // Сигнал начала отдыха
+
         timer = setInterval(() => {
             restLeft--;
             timerDisplay.textContent = formatTime(restLeft);
 
             if (restLeft <= 0) {
                 clearInterval(timer);
+                playSound(startSound); // Сигнал конца отдыха (начало нового раунда)
                 startRound();
             }
         }, 1000);
@@ -115,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isRunning = false;
         roundInfo.textContent = "Тренировка завершена!";
         timerDisplay.textContent = "00:00";
+        playSound(endSound); // Финальный сигнал
     }
 
     // Остановка таймера
