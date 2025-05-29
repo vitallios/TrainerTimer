@@ -203,11 +203,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============== Инициализация ==============
     startBtn.addEventListener('click', startTimer);
     stopBtn.addEventListener('click', stopTimer);
-    
-    // Для Telegram Mini App
-    if (window.Telegram?.WebApp) {
-        Telegram.WebApp.expand();
-        Telegram.WebApp.enableClosingConfirmation();
-        initAudio(); // В Telegram жесты уже были
-    }
 });
