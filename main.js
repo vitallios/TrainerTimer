@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     // Элементы интерфейса
     const timerDisplay = document.getElementById('timer');
@@ -9,11 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsPanel = document.getElementById('settings-panel');
     const saveSettingsBtn = document.getElementById('save-settings');
 
-// Добавьте в начало кода проверку Telegram WebApp
-if (window.Telegram?.WebApp) {
-  Telegram.WebApp.expand(); // Раскрыть на весь экран
-  Telegram.WebApp.enableClosingConfirmation(); // Подтверждение закрытия
-}
+    // Добавьте в начало кода проверку Telegram WebApp
+    if (window.Telegram?.WebApp) {
+        Telegram.WebApp.expand(); // Раскрыть на весь экран
+        Telegram.WebApp.enableClosingConfirmation(); // Подтверждение закрытия
+    }
 
     // Base64-звуки (встроены в код)
     const startSound = new Audio('data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
