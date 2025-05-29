@@ -12,6 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRunning = false;
     let isResting = false;
     let audioContext;
+    let isTelegramWebApp = false;
+
+    // Проверяем, открыто ли в Telegram WebView
+    if (window.Telegram && window.Telegram.WebApp) {
+        isTelegramWebApp = true;
+        Telegram.WebApp.expand(); // Разворачиваем приложение на весь экран
+    }
 
     // Настройки по умолчанию
     let settings = {
@@ -21,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         delayTime: 5
     };
 
-    // Простые звуки с использованием Web Audio API
+    // Инициализация аудио
     function initAudio() {
         try {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -30,35 +37,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Генерация простого звукового сигнала
-    function playBeep(type) {
-        if (!audioContext) return;
-
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        // Настройки для разных типов сигналов
-        if (type === 'start') {
-            oscillator.frequency.value = 800; // Высокий тон для начала
-            gainNode.gain.value = 0.3;
-            oscillator.type = 'sine';
+    // Функция воспроизведения звука (работает и в Telegram, и в браузере)
+    function playSound(type) {
+        if (isTelegramWebApp) {
+            // В Telegram используем вибрацию и уведомления
+            try {
+                if (type === 'start') {
+                    // Короткая вибрация для начала
+                    navigator.vibrate([100, 50, 100]);
+                } else {
+                    // Длинная вибрация для окончания
+                    navigator.vibrate([300]);
+                }
+                
+                // Можно также использовать Telegram WebApp.HapticFeedback
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                    if (type === 'start') {
+                        Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    } else {
+                        Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+                    }
+                }
+            } catch (e) {
+                console.log("Ошибка вибрации:", e);
+            }
         } else {
-            oscillator.frequency.value = 400; // Низкий тон для окончания
-            gainNode.gain.value = 0.3;
-            oscillator.type = 'square';
-        }
+            // В браузере используем Web Audio API
+            if (!audioContext) initAudio();
+            if (!audioContext) return;
 
-        oscillator.start();
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.5);
-        oscillator.stop(audioContext.currentTime + 0.5);
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Настройки для разных типов сигналов
+            if (type === 'start') {
+                oscillator.frequency.value = 800; // Высокий тон для начала
+                gainNode.gain.value = 0.3;
+                oscillator.type = 'sine';
+            } else {
+                oscillator.frequency.value = 400; // Низкий тон для окончания
+                gainNode.gain.value = 0.3;
+                oscillator.type = 'square';
+            }
+
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.5);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
     }
 
     // Инициализируем аудио при первом взаимодействии пользователя
     startBtn.addEventListener('click', () => {
-        if (!audioContext) {
+        if (!audioContext && !isTelegramWebApp) {
             initAudio();
         }
     });
@@ -101,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (delay <= 0) {
                 clearInterval(countdown);
-                playBeep('start'); // Сигнал начала тренировки
+                playSound('start'); // Сигнал начала тренировки
                 startRound();
             }
         }, 1000);
@@ -120,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let timeLeft = settings.roundTime;
         timerDisplay.textContent = formatTime(timeLeft);
 
-        playBeep('start'); // Сигнал начала раунда
+        playSound('start'); // Сигнал начала раунда
 
         timer = setInterval(() => {
             timeLeft--;
@@ -128,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (timeLeft <= 0) {
                 clearInterval(timer);
-                playBeep('end'); // Сигнал конца раунда
+                playSound('end'); // Сигнал конца раунда
                 if (currentRound < settings.rounds) {
                     startRest();
                 } else {
@@ -145,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let restLeft = settings.restTime;
         timerDisplay.textContent = formatTime(restLeft);
 
-        playBeep('end'); // Сигнал начала отдыха
+        playSound('end'); // Сигнал начала отдыха
 
         timer = setInterval(() => {
             restLeft--;
@@ -153,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (restLeft <= 0) {
                 clearInterval(timer);
-                playBeep('start'); // Сигнал конца отдыха (начало нового раунда)
+                playSound('start'); // Сигнал конца отдыха (начало нового раунда)
                 startRound();
             }
         }, 1000);
@@ -165,7 +198,12 @@ document.addEventListener('DOMContentLoaded', () => {
         isRunning = false;
         roundInfo.textContent = "Тренировка завершена!";
         timerDisplay.textContent = "00:00";
-        playBeep('end'); // Финальный сигнал
+        playSound('end'); // Финальный сигнал
+        
+        // В Telegram можно показать уведомление
+        if (isTelegramWebApp && window.Telegram && window.Telegram.WebApp.showAlert) {
+            Telegram.WebApp.showAlert("Тренировка завершена!");
+        }
     }
 
     // Остановка таймера
@@ -194,4 +232,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Кнопки управления
     startBtn.addEventListener('click', startTimer);
     stopBtn.addEventListener('click', stopTimer);
+
+    // Закрытие Telegram WebApp (если нужно)
+    if (isTelegramWebApp) {
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Закрыть';
+        closeBtn.style.position = 'fixed';
+        closeBtn.style.bottom = '20px';
+        closeBtn.style.right = '20px';
+        closeBtn.style.padding = '10px 20px';
+        closeBtn.style.backgroundColor = '#0088cc';
+        closeBtn.style.color = 'white';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '5px';
+        closeBtn.addEventListener('click', () => {
+            Telegram.WebApp.close();
+        });
+        document.body.appendChild(closeBtn);
+    }
 });
